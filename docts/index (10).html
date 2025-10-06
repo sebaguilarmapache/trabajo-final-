@@ -1,0 +1,610 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>El Romántico Viajero - Universidad de Chile</title>
+    <style>
+        /* Estilos avanzados con CSS */
+        body {
+            background-color: #003087; /* Azul Pantone 287c */
+            color: #000000; /* Negro para texto */
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            animation: fadeIn 2s ease-in-out;
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><text x="2" y="20" font-family="Arial" font-size="20" fill="rgb(218,79,64)">U</text></svg>'), auto;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        header {
+            width: 100%;
+            text-align: center;
+            padding: 20px;
+            background-color: rgb(218, 79, 64); /* Rojo Pantone 032c */
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        h1 {
+            font-family: 'Brush Script MT', cursive; /* Cursiva elegante */
+            color: #FFD700; /* Dorado */
+            font-size: 3em;
+            margin: 0;
+            transition: transform 0.3s, text-shadow 0.3s;
+            cursor: pointer;
+        }
+
+        h1:hover {
+            transform: scale(1.1);
+            text-shadow: 0 0 10px #FFFFFF, 0 0 20px #FFD700;
+        }
+
+        nav {
+            margin: 20px 0;
+        }
+
+        nav button {
+            background-color: #F5F5F5;
+            color: #003087; /* Azul Pantone 287c */
+            border: none;
+            padding: 10px 20px;
+            margin: 0 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.3s, box-shadow 0.3s;
+        }
+
+        nav button:hover {
+            background-color: #FFD700;
+            transform: scale(1.05);
+        }
+
+        nav button.button-glow {
+            box-shadow: 0 0 15px #FFD700;
+            background-color: #FFD700;
+            color: #003087;
+            animation: buttonGlow 1s ease-out;
+        }
+
+        @keyframes buttonGlow {
+            0% { box-shadow: 0 0 15px #FFD700; }
+            100% { box-shadow: none; }
+        }
+
+        section h2 {
+            transition: text-shadow 0.3s;
+        }
+
+        section h2.title-glow {
+            text-shadow: 0 0 15px #FFD700;
+            animation: titleGlow 1s ease-out;
+        }
+
+        @keyframes titleGlow {
+            0% { text-shadow: 0 0 15px #FFD700; }
+            100% { text-shadow: none; }
+        }
+
+        section {
+            width: 80%;
+            margin: 20px 0;
+            padding: 20px;
+            background-color: #FFFFFF; /* Blanco */
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+            display: none;
+        }
+
+        section.active {
+            display: block;
+        }
+
+        section:hover {
+            transform: translateY(-5px);
+        }
+
+        .idols-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            justify-content: center;
+        }
+
+        .idol-card {
+            background-color: #003087; /* Azul Pantone 287c */
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+            color: #FFFFFF;
+        }
+
+        .idol-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+
+        .idol-details {
+            display: none;
+            margin-top: 10px;
+            color: #003087; /* Azul Pantone 287c */
+            background-color: #F5F5F5;
+            padding: 5px;
+            border-radius: 5px;
+        }
+
+        .section-image {
+            width: 100%;
+            max-width: 600px;
+            height: auto;
+            margin: 20px auto;
+            display: block;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .idol-image {
+            width: 100%;
+            max-width: 150px;
+            height: auto;
+            margin-top: 10px;
+            border-radius: 5px;
+        }
+
+        #history-content {
+            font-style: italic;
+        }
+
+        #fans p {
+            font-size: 1.2em;
+            line-height: 1.6;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        }
+
+        #fans strong {
+            color: #003087; /* Azul Pantone 287c */
+            font-weight: bold;
+        }
+
+        #titles ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        #titles li {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #F5F5F5;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        #titles li:hover {
+            background-color: #E0E0E0;
+        }
+
+        .quiz-container {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #F5F5F5;
+            border-radius: 5px;
+        }
+
+        .quiz-container h3 {
+            color: #003087;
+        }
+
+        .quiz-container label {
+            display: block;
+            margin: 10px 0;
+        }
+
+        .quiz-container button {
+            background-color: #003087;
+            color: #FFFFFF;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .quiz-container button:hover {
+            background-color: rgb(218, 79, 64);
+        }
+
+        #quiz-result {
+            margin-top: 10px;
+            font-weight: bold;
+            color: #003087;
+        }
+
+        #bullanguero-message {
+            display: none;
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #FFD700;
+            color: #003087;
+            font-weight: bold;
+            font-size: 1.5em;
+            text-align: center;
+            border-radius: 5px;
+            animation: popIn 0.5s ease-in-out;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        footer {
+            color: #FFFFFF; /* Blanco para el texto */
+            text-align: center;
+            padding: 10px;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        /* Diseño responsivo */
+        @media (max-width: 768px) {
+            section {
+                width: 95%;
+            }
+            h1 {
+                font-size: 2em;
+            }
+            .idols-grid {
+                grid-template-columns: 1fr;
+            }
+            nav button {
+                padding: 8px 15px;
+                margin: 5px;
+            }
+            .section-image {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1 onclick="illuminateTitle()">El Romántico Viajero</h1>
+        <nav>
+            <button data-section="history">Historia</button>
+            <button data-section="idols">Ídolos</button>
+            <button data-section="titles">Títulos</button>
+            <button data-section="fans">Hinchada</button>
+            <button data-section="quiz">Cuestionario</button>
+        </nav>
+    </header>
+
+    <section id="history" class="active">
+        <h2>Historia de la Universidad de Chile</h2>
+        <p id="history-content">
+            El Club <strong>Universidad de Chile</strong>, cariñosamente conocido como "La U" o "El Bulla", es un club de fútbol profesional con una rica historia, fundado oficialmente el <strong>24 de mayo de 1927</strong> en Santiago. Es uno de los equipos más exitosos y populares de Chile, jugando actualmente en la Primera División. A lo largo de su trayectoria, el club se ha asociado inconfundiblemente al color <strong>azul</strong> y lleva como emblema en su logo al <strong>Chuncho</strong> (adoptado en 1943).<br><br>
+            En cuanto a su palmarés, la Universidad de Chile ha conquistado el título de la liga chilena en <strong>18 ocasiones</strong>. Además de su éxito nacional, su mayor logro continental llegó con la <strong>Copa Sudamericana 2011</strong>, su primer título internacional. Esta campaña fue histórica e inigualable, ya que el equipo se proclamó campeón de forma <strong>invicta</strong> y tuvo en sus filas a <strong>Eduardo Vargas</strong>, el máximo goleador del torneo. Este período de gloria se enmarca en una etapa reciente muy exitosa, donde el club sumó varios campeonatos de liga, incluyendo su trayectoria invicta en la Sudamericana. A nivel de Copa Libertadores, la "U" ha demostrado su jerarquía continental al llegar cuatro veces a las semifinales (1970, 1996, 2010 y 2012).<br><br>
+            Las principales rivalidades del club son los <strong>Clásicos de Santiago</strong>: el Clásico del fútbol chileno contra <strong>Colo-Colo</strong> y el Clásico Universitario contra la <strong>Universidad Católica</strong>. Finalmente, aunque la Universidad de Chile <strong>no es dueña de su estadio</strong>, tradicionalmente ejerce su localía en el <strong>Estadio Nacional Julio Martínez Prádanos</strong>, ubicado en Ñuñoa. Este recinto fue testigo de su regreso en 2010, tras un proceso de modernización, en un importante partido de semifinales de Copa Libertadores contra Guadalajara de México.
+        </p>
+        <img src="Historia_U.jpg" alt="Historia de la U" class="section-image">
+    </section>
+
+    <section id="idols">
+        <h2>Ídolos de la U</h2>
+        <div class="idols-grid">
+            <div class="idol-card" data-nickname="El Samurai Azul" data-bio="Johnny Herrera, legendario portero y capitán de la U.">
+                Johnny Herrera
+                <img src="Johnny.imagen.jpg" alt="Johnny Herrera" class="idol-image">
+                <div class="idol-details"></div>
+            </div>
+            <div class="idol-card" data-nickname="El Gran Leonel" data-bio="Leonel Sánchez, ícono histórico y goleador.">
+                Leonel Sánchez
+                <img src="Leonel.imagen.jpg" alt="Leonel Sánchez" class="idol-image">
+                <div class="idol-details"></div>
+            </div>
+            <div class="idol-card" data-nickname="El Tanque" data-bio="Carlos Campos, delantero poderoso de los años 60.">
+                Carlos Campos
+                <img src="Carlos.imagen.jpg" alt="Carlos Campos" class="idol-image">
+                <div class="idol-details"></div>
+            </div>
+            <div class="idol-card" data-nickname="Superman Vargas" data-bio="Sergio Vargas, portero heroico en los 90.">
+                Sergio Vargas
+                <img src="Sergio.imagen.jpg" alt="Sergio Vargas" class="idol-image">
+                <div class="idol-details"></div>
+            </div>
+            <div class="idol-card" data-nickname="El Príncipe" data-bio="Charles Aránguiz, mediocampista clave en títulos internacionales.">
+                Charles Aránguiz
+                <img src="Charles.imagen.jpg" alt="Charles Aránguiz" class="idol-image">
+                <div class="idol-details"></div>
+            </div>
+            <div class="idol-card" data-nickname="Goku" data-bio="Diego Rivarola, delantero argentino con goles memorables.">
+                Diego Rivarola
+                <img src="Diego.imagen.jpg" alt="Diego Rivarola" class="idol-image">
+                <div class="idol-details"></div>
+            </div>
+            <div class="idol-card" data-nickname="Turboman" data-bio="Eduardo Vargas, goleador en la Sudamericana 2011.">
+                Eduardo Vargas
+                <img src="Eduardo.imagen.jpg" alt="Eduardo Vargas" class="idol-image">
+                <div class="idol-details"></div>
+            </div>
+            <div class="idol-card" data-nickname="Carepato" data-bio="Marcelo Díaz, volante de contención y líder.">
+                Marcelo Díaz
+                <img src="Marcelo.imagen.jpg" alt="Marcelo Díaz" class="idol-image">
+                <div class="idol-details"></div>
+            </div>
+            <div class="idol-card" data-nickname="Matador" data-bio="Marcelo Salas, el Matador, ídolo histórico de la U y máximo goleador chileno.">
+                Marcelo Salas
+                <img src="Marcelo.imagen.jpg" alt="Marcelo Salas" class="idol-image">
+                <div class="idol-details"></div>
+            </div>
+        </div>
+    </section>
+
+    <section id="titles">
+        <h2>Los 29 Títulos</h2>
+        <p>La Universidad de Chile ha forjado una historia gloriosa con un total de 29 títulos oficiales, consolidándose como uno de los clubes más exitosos del fútbol chileno. A continuación, se detalla su palmarés:</p>
+        <ul>
+            <li><strong>18 Títulos de Primera División:</strong> La U ha conquistado el campeonato nacional en los años 1940, 1959, 1962, 1964, 1965, 1967, 1969, 1994, 1995, 1999, 2000, 2004 Apertura, 2009 Apertura, 2011 Apertura, 2011 Clausura, 2012 Apertura, 2014 Apertura y 2017 Clausura. Estos títulos reflejan la consistencia y dominio del club a lo largo de las décadas.</li>
+            <li><strong>6 Copas Chile:</strong> Triunfos en 1979, 1998, 2000, 2012-13, 2015 y 2019, destacando su capacidad para brillar en torneos de eliminación directa.</li>
+            <li><strong>1 Supercopa de Chile:</strong> Ganada en 2015, un título que enfrentó a los campeones de liga y copa, demostrando la supremacía de la U en ese año.</li>
+            <li><strong>1 Primera B:</strong> En 1988, la U se alzó con el título de la segunda división, mostrando su resiliencia al regresar rápidamente a la máxima categoría.</li>
+            <li><strong>1 Copa Sudamericana (2011):</strong> El hito más glorioso en la historia internacional del club, logrado de forma invicta bajo la dirección técnica de Jorge Sampaoli. Este título marcó un antes y un después, con jugadores como Eduardo Vargas y Charles Aránguiz liderando un equipo inolvidable que conquistó América con un fútbol vertiginoso y ofensivo.</li>
+            <li><strong>3 Torneos Metropolitanos y Regionales:</strong> Incluidos en su palmarés, estos títulos de los primeros años del club refuerzan su legado histórico.</li>
+        </ul>
+        <p>Este impresionante historial de trofeos es un testimonio del compromiso, la pasión y el talento que han caracterizado a la Universidad de Chile a lo largo de su historia, consolidándola como el <strong>Romántico Viajero</strong> del fútbol chileno.</p>
+        <img src="Titulo_U.jpg" alt="Títulos de la U" class="section-image">
+    </section>
+
+    <section id="fans">
+        <h2>La Apasionada Hinchada</h2>
+        <p>La hinchada de la Universidad de Chile, conocida como <strong>Los de Abajo</strong>, los <strong>Azules</strong>, los <strong>Románticos Viajeros</strong> y los <strong>Chunchos</strong>, es el corazón pulsante del club. Con una pasión desbordante, llenan los estadios con cánticos que resuenan como himnos, banderas azules ondeando al viento y un amor inquebrantable por la camiseta. En cada partido, ya sea en la victoria o en la derrota, su energía transforma el ambiente en una verdadera fiesta futbolística. <strong>Los de Abajo</strong> no solo apoyan, sino que viven y respiran la U, viajando por Chile y el continente para alentar al equipo, demostrando una lealtad que trasciende generaciones. ¡Son la fuerza indomable que hace latir el alma del <strong>Romántico Viajero</strong>!</p>
+        <img src="Hinchada_U.jpg" alt="Hinchada de la U" class="section-image">
+    </section>
+
+    <section id="quiz">
+        <h2>Cuestionario Azul</h2>
+        <div class="quiz-container">
+            <h3>Pregunta 1: Historia</h3>
+            <p>¿En qué año fue fundada la Universidad de Chile?</p>
+            <label><input type="radio" name="q1" value="1927"> 1927</label>
+            <label><input type="radio" name="q1" value="1930"> 1930</label>
+            <label><input type="radio" name="q1" value="1940"> 1940</label>
+            <button onclick="checkQuiz('q1', '1927', 'result-q1')">Enviar</button>
+            <p id="result-q1"></p>
+        </div>
+        <div class="quiz-container">
+            <h3>Pregunta 2: Historia</h3>
+            <p>¿Cuál es el emblema del club adoptado en 1943?</p>
+            <label><input type="radio" name="q2" value="Chuncho"> Chuncho</label>
+            <label><input type="radio" name="q2" value="León"> León</label>
+            <label><input type="radio" name="q2" value="Águila"> Águila</label>
+            <button onclick="checkQuiz('q2', 'Chuncho', 'result-q2')">Enviar</button>
+            <p id="result-q2"></p>
+        </div>
+        <div class="quiz-container">
+            <h3>Pregunta 3: Ídolos</h3>
+            <p>¿Quién fue el máximo goleador de la Copa Sudamericana 2011?</p>
+            <label><input type="radio" name="q3" value="Eduardo Vargas"> Eduardo Vargas</label>
+            <label><input type="radio" name="q3" value="Leonel Sánchez"> Leonel Sánchez</label>
+            <label><input type="radio" name="q3" value="Johnny Herrera"> Johnny Herrera</label>
+            <button onclick="checkQuiz('q3', 'Eduardo Vargas', 'result-q3')">Enviar</button>
+            <p id="result-q3"></p>
+        </div>
+        <div class="quiz-container">
+            <h3>Pregunta 4: Ídolos</h3>
+            <p>¿Cuál es el apodo de Marcelo Salas?</p>
+            <label><input type="radio" name="q4" value="Matador"> Matador</label>
+            <label><input type="radio" name="q4" value="Turboman"> Turboman</label>
+            <label><input type="radio" name="q4" value="Goku"> Goku</label>
+            <button onclick="checkQuiz('q4', 'Matador', 'result-q4')">Enviar</button>
+            <p id="result-q4"></p>
+        </div>
+        <div class="quiz-container">
+            <h3>Pregunta 5: Títulos</h3>
+            <p>¿En qué año ganó la U la Copa Sudamericana?</p>
+            <label><input type="radio" name="q5" value="2011"> 2011</label>
+            <label><input type="radio" name="q5" value="2009"> 2009</label>
+            <label><input type="radio" name="q5" value="2015"> 2015</label>
+            <button onclick="checkQuiz('q5', '2011', 'result-q5')">Enviar</button>
+            <p id="result-q5"></p>
+        </div>
+        <div class="quiz-container">
+            <h3>Pregunta 6: Títulos</h3>
+            <p>¿Cuántos títulos de Primera División ha ganado la U?</p>
+            <label><input type="radio" name="q6" value="18"> 18</label>
+            <label><input type="radio" name="q6" value="15"> 15</label>
+            <label><input type="radio" name="q6" value="20"> 20</label>
+            <button onclick="checkQuiz('q6', '18', 'result-q6')">Enviar</button>
+            <p id="result-q6"></p>
+        </div>
+        <div class="quiz-container">
+            <h3>Pregunta 7: Hinchada</h3>
+            <p>¿Cuál es uno de los apodos de la hinchada de la U?</p>
+            <label><input type="radio" name="q7" value="Los de Abajo"> Los de Abajo</label>
+            <label><input type="radio" name="q7" value="Los Leones"> Los Leones</label>
+            <label><input type="radio" name="q7" value="Los Albos"> Los Albos</label>
+            <button onclick="checkQuiz('q7', 'Los de Abajo', 'result-q7')">Enviar</button>
+            <p id="result-q7"></p>
+        </div>
+        <div class="quiz-container">
+            <h3>Pregunta 8: Hinchada</h3>
+            <p>¿Cuál es el estadio que arrienda la U para sus partidos?</p>
+            <label><input type="radio" name="q8" value="Estadio Nacional"> Estadio Nacional</label>
+            <label><input type="radio" name="q8" value="Estadio Monumental"> Estadio Monumental</label>
+            <label><input type="radio" name="q8" value="Estadio San Carlos"> Estadio San Carlos</label>
+            <button onclick="checkQuiz('q8', 'Estadio Nacional', 'result-q8')">Enviar</button>
+            <p id="result-q8"></p>
+        </div>
+        <div id="bullanguero-message">¡Eres un bUllangUero oficial!</div>
+    </section>
+
+    <footer>
+        <p>Creado con creatividad por Grok. Y aguante el bUlla</p>
+    </footer>
+
+    <script>
+        // JavaScript para interactividad
+        let correctAnswers = {
+            'q1': false,
+            'q2': false,
+            'q3': false,
+            'q4': false,
+            'q5': false,
+            'q6': false,
+            'q7': false,
+            'q8': false
+        };
+
+        function illuminateTitle() {
+            const title = document.querySelector('h1');
+            title.style.textShadow = '0 0 10px #FFFFFF, 0 0 20px #FFD700';
+            setTimeout(() => {
+                title.style.textShadow = 'none';
+            }, 1000);
+        }
+
+        function showSection(sectionId) {
+            const sections = document.querySelectorAll('section');
+            sections.forEach(section => {
+                section.classList.remove('active');
+                if (section.id === sectionId) {
+                    section.classList.add('active');
+                    section.scrollIntoView({ behavior: 'smooth' });
+                    // Glow effect on h2 title
+                    const h2 = section.querySelector('h2');
+                    if (h2) {
+                        h2.classList.add('title-glow');
+                        setTimeout(() => {
+                            h2.classList.remove('title-glow');
+                        }, 1000);
+                    }
+                }
+            });
+        }
+
+        function checkQuiz(quizName, correctAnswer, resultId) {
+            const selected = document.querySelector(`input[name="${quizName}"]:checked`);
+            const resultElement = document.getElementById(resultId);
+            if (selected && selected.value === correctAnswer) {
+                resultElement.textContent = '¡Muy Bien León!';
+                resultElement.style.color = '#003087';
+                correctAnswers[quizName] = true;
+            } else {
+                resultElement.textContent = 'Inténtalo de nuevo.';
+                resultElement.style.color = 'red';
+                correctAnswers[quizName] = false;
+            }
+            checkAllCorrect();
+        }
+
+        function checkAllCorrect() {
+            const bullangueroMessage = document.getElementById('bullanguero-message');
+            if (Object.values(correctAnswers).every(answer => answer)) {
+                bullangueroMessage.style.display = 'block';
+            } else {
+                bullangueroMessage.style.display = 'none';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set up button click listeners for glow effect
+            const navButtons = document.querySelectorAll('nav button');
+            navButtons.forEach(button => {
+                button.addEventListener('click', (e) => {
+                    // Glow effect on button
+                    button.classList.add('button-glow');
+                    setTimeout(() => {
+                        button.classList.remove('button-glow');
+                    }, 1000);
+
+                    const sectionId = button.dataset.section;
+                    if (sectionId) {
+                        showSection(sectionId);
+                    }
+                });
+            });
+
+            // Manejo de eventos: Clics para mostrar detalles
+            const idolCards = document.querySelectorAll('.idol-card');
+            idolCards.forEach(card => {
+                card.addEventListener('click', () => {
+                    const details = card.querySelector('.idol-details');
+                    if (details.style.display === 'block') {
+                        details.style.display = 'none';
+                    } else {
+                        details.innerHTML = `
+                            Apodo: ${card.dataset.nickname}<br>
+                            Biografía: ${card.dataset.bio}
+                        `;
+                        details.style.display = 'block';
+                    }
+                });
+            });
+
+            // Eventos de teclado: Navegar secciones con flechas
+            let currentSection = 0;
+            const sections = document.querySelectorAll('section');
+            const sectionIds = ['history', 'idols', 'titles', 'fans', 'quiz'];
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowDown') {
+                    currentSection = (currentSection + 1) % sectionIds.length;
+                    showSection(sectionIds[currentSection]);
+                } else if (e.key === 'ArrowUp') {
+                    currentSection = (currentSection - 1 + sectionIds.length) % sectionIds.length;
+                    showSection(sectionIds[currentSection]);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
