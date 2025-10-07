@@ -340,12 +340,12 @@
             </div>
             <div class="idol-card" data-nickname="Carepato" data-bio="Marcelo Díaz, volante de contención y líder.">
                 Marcelo Díaz
-                <img src="MarceloDiaz.imagen.jpg" alt="Marcelo Díaz" class="idol-image">
+                <img src="Marcelo.imagen.jpg" alt="Marcelo Díaz" class="idol-image">
                 <div class="idol-details"></div>
             </div>
             <div class="idol-card" data-nickname="Matador" data-bio="Marcelo Salas, el Matador, ídolo histórico de la U y máximo goleador chileno.">
                 Marcelo Salas
-                <img src="MarceloSalas.imagen.jpg" alt="Marcelo Salas" class="idol-image">
+                <img src="Marcelo.imagen.jpg" alt="Marcelo Salas" class="idol-image">
                 <div class="idol-details"></div>
             </div>
         </div>
@@ -439,7 +439,7 @@
         </div>
         <div class="quiz-container">
             <h3>Pregunta 8: Hinchada</h3>
-            <p>¿Cuál es el estadio que arrienda la U para sus partidos?</p>
+            <p>¿Cuál es el estadio que arriende la U para sus partidos?</p>
             <label><input type="radio" name="q8" value="Estadio Nacional"> Estadio Nacional</label>
             <label><input type="radio" name="q8" value="Estadio Monumental"> Estadio Monumental</label>
             <label><input type="radio" name="q8" value="Estadio San Carlos"> Estadio San Carlos</label>
@@ -466,6 +466,9 @@
             'q8': false
         };
 
+        let currentQuestion;
+        let quizContainers;
+
         function illuminateTitle() {
             const title = document.querySelector('h1');
             title.style.textShadow = '0 0 10px #FFFFFF, 0 0 20px #FFD700';
@@ -474,13 +477,20 @@
             }, 1000);
         }
 
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
         function showSection(sectionId) {
             const sections = document.querySelectorAll('section');
             sections.forEach(section => {
                 section.classList.remove('active');
                 if (section.id === sectionId) {
                     section.classList.add('active');
-                    section.scrollIntoView({ behavior: 'smooth' });
                     // Glow effect on h2 title
                     const h2 = section.querySelector('h2');
                     if (h2) {
@@ -488,6 +498,8 @@
                         setTimeout(() => {
                             h2.classList.remove('title-glow');
                         }, 1000);
+                        // Scroll to the h2 title
+                        h2.scrollIntoView({ behavior: 'smooth' });
                     }
                 }
             });
@@ -496,16 +508,26 @@
         function checkQuiz(quizName, correctAnswer, resultId) {
             const selected = document.querySelector(`input[name="${quizName}"]:checked`);
             const resultElement = document.getElementById(resultId);
+            const index = parseInt(quizName.charAt(1)) - 1;
             if (selected && selected.value === correctAnswer) {
                 resultElement.textContent = '¡Muy Bien León!';
                 resultElement.style.color = '#003087';
                 correctAnswers[quizName] = true;
+                if (index === currentQuestion) {
+                    if (index < 7) {
+                        currentQuestion++;
+                        quizContainers[currentQuestion].style.display = 'block';
+                        quizContainers[currentQuestion - 1].style.display = 'none';
+                    } else {
+                        quizContainers[currentQuestion].style.display = 'none';
+                    }
+                }
+                checkAllCorrect();
             } else {
                 resultElement.textContent = 'Inténtalo de nuevo.';
                 resultElement.style.color = 'red';
                 correctAnswers[quizName] = false;
             }
-            checkAllCorrect();
         }
 
         function checkAllCorrect() {
@@ -518,6 +540,40 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            // Función para randomizar opciones de cada pregunta
+            function randomizeQuizOptions() {
+                quizContainers = document.querySelectorAll('#quiz .quiz-container');
+                quizContainers.forEach(container => {
+                    const questionP = container.querySelector('p'); // El párrafo de la pregunta
+                    const labels = Array.from(container.querySelectorAll('label')).slice(0, 3); // Las 3 opciones
+                    const button = container.querySelector('button');
+                    const resultP = container.querySelector('p[id^="result-"]'); // El párrafo de resultado
+
+                    // Barajar las labels
+                    shuffle(labels);
+
+                    // Remover las labels existentes
+                    labels.forEach(label => label.remove());
+
+                    // Crear fragmento para insertar las labels barajadas antes del botón
+                    const fragment = document.createDocumentFragment();
+                    labels.forEach(label => fragment.appendChild(label));
+
+                    // Insertar antes del botón
+                    button.parentNode.insertBefore(fragment, button);
+                });
+            }
+
+            // Inicializar quiz: randomizar opciones y mostrar solo la primera pregunta
+            randomizeQuizOptions();
+            currentQuestion = 0;
+            quizContainers = document.querySelectorAll('#quiz .quiz-container');
+            quizContainers.forEach((container, index) => {
+                if (index !== 0) {
+                    container.style.display = 'none';
+                }
+            });
+
             // Set up button click listeners for glow effect
             const navButtons = document.querySelectorAll('nav button');
             navButtons.forEach(button => {
